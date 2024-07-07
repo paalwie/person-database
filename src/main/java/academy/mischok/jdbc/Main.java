@@ -16,6 +16,7 @@ public class Main {
     - Fehlerbehebungen: Exception Handling
     - Gesamte "UI" schöner machen, eine Überschrift etc.
     - In der Aufgabenstellung steht was von einer Tabellenausgabe drin, das anpassen
+    - Wenn man einen Eintrag löscht, wird diese ID nicht mehr vergeben, sprich da sind Lücken drin
      */
 
     // JDBC URL, username and password
@@ -151,6 +152,7 @@ public class Main {
         return scanner.nextLine();
     }
 
+    //holt sich die Daten aus der Datenbank per übergebene ID, fragt nach welcher Wert geändert werden soll, überschreibt dann diesen, und speichert die geänderte Daten
     private static void editPerson(Connection connection, Scanner scanner) throws SQLException {
 
         System.out.print("Geben Sie die ID der zu bearbeitenden Person ein: ");
@@ -174,8 +176,8 @@ public class Main {
         BigDecimal salary = resultSet.getBigDecimal("salary");
         BigDecimal bonus = resultSet.getBigDecimal("bonus");
 
-        boolean continueEditing = true;
-        while (continueEditing) {
+        boolean weiterBearbeiten = true;
+        while (weiterBearbeiten) {
             System.out.println("\nWelche Eigenschaft möchten Sie bearbeiten?");
             System.out.println("1: Vorname (" + firstName + ")");
             System.out.println("2: Nachname (" + lastName + ")");
@@ -186,9 +188,9 @@ public class Main {
             System.out.println("7: Bonus (" + bonus + ")");
             System.out.println("0: Abbrechen");
 
-            int choice = getIntegerInput(scanner, "Ihre Wahl: ");
+            int auswahl = getIntegerInput(scanner, "Ihre Wahl: ");
 
-            switch (choice) {
+            switch (auswahl) {
                 case 1:
                     firstName = getStringInput(scanner, "Neuer Vorname (aktuell: " + firstName + "): ");
                     break;
@@ -205,6 +207,7 @@ public class Main {
                     String newBirthdayString = getStringInput(scanner, "Neues Geburtsdatum (aktuell: " + birthday + ") (JJJJ-MM-TT): ");
                     if (!newBirthdayString.isEmpty()) {
                         birthday = LocalDate.parse(newBirthdayString);
+                        //hier: Exception falls man ein ungültiges Datum eingibt
                     }
                     break;
                 case 6:
@@ -220,7 +223,7 @@ public class Main {
                     }
                     break;
                 case 0:
-                    continueEditing = false;
+                    weiterBearbeiten = false;
                     break;
                 default:
                     System.out.println("Ungültige Eingabe. Bitte erneut versuchen.");
@@ -242,6 +245,7 @@ public class Main {
         System.out.println("Person erfolgreich bearbeitet!");
     }
 
+    //löscht die Person mit der angegebenen ID - Problem: Die ID wird danach nicht mehr vergeben
     private static void deletePerson(Connection connection, Scanner scanner) throws SQLException {
         int id = getIntegerInput(scanner, "ID der zu löschenden Person");
 
@@ -249,15 +253,22 @@ public class Main {
         PreparedStatement statement = connection.prepareStatement(query);
         statement.setInt(1, id);
 
-        int affectedRows = statement.executeUpdate();
-        if (affectedRows == 0) {
+        int gewählteZeile = statement.executeUpdate();
+        if (gewählteZeile == 0) {
             System.out.println("Keine Person mit der ID " + id + " gefunden.");
         } else {
             System.out.println("Person erfolgreich gelöscht.");
         }
     }
 
+
+    /*
+     * filtert die Daten aus der Datenbank per übergebene ID, fragt nach welcher Wert geändert werden soll, überschreibt dann diesen, und speichert die geänderte Daten
+     */
     private static void filterPersons(Connection connection, Scanner scanner) throws SQLException {
+
+        //gibt hier über die Konsole den Filterkriterien ein, wie in SQL dargestellt (eventuell ändern, ist nicht wirklich schön)
+        //nach 2 Feldern, getrennt durch das = : links das Attribut, rechts den Wert
         System.out.print("Geben Sie die Filterkriterien ein (z.B. last_name=Smith oder country=Germany): ");
         String filterInput = scanner.nextLine();
         String[] filterParts = filterInput.split("=");
@@ -270,6 +281,7 @@ public class Main {
         String value = filterParts[1].trim();
         boolean isStringField = field.equals("first_name") || field.equals("last_name") || field.equals("email") || field.equals("country");
 
+        //schreibt einen SQL Befehl für die Filterung, der den Wert überall sucht, egal ob am Anfang, Mitte oder Schluss (heißt das gesuchte Wort muss irgendwo vorkommen)
         String query = "SELECT * FROM person WHERE ";
         if (isStringField) {
             query += field + " ILIKE ?";
@@ -298,6 +310,7 @@ public class Main {
         }
     }
 
+    //funktioniert ähnlich wie beim Filtern, auch nicht wirklich schön aber funktioniert
     private static void sortPersons(Connection connection, Scanner scanner) throws SQLException {
         System.out.print("Geben Sie die Sortierkriterien ein (z.B. last_name ASC oder salary DESC): ");
         String sortInput = scanner.nextLine();
@@ -307,14 +320,14 @@ public class Main {
             return;
         }
 
-        String field = sortParts[0].trim();
-        String direction = sortParts[1].trim().toUpperCase();
-        if (!direction.equals("ASC") && !direction.equals("DESC")) {
+        String attribut = sortParts[0].trim();
+        String sortierung = sortParts[1].trim().toUpperCase();
+        if (!sortierung.equals("ASC") && !sortierung.equals("DESC")) {
             System.out.println("Ungültige Sortierrichtung. Bitte verwenden Sie ASC oder DESC.");
             return;
         }
 
-        String query = "SELECT * FROM person ORDER BY " + field + " " + direction;
+        String query = "SELECT * FROM person ORDER BY " + attribut + " " + sortierung;
 
         PreparedStatement statement = connection.prepareStatement(query);
         ResultSet resultSet = statement.executeQuery();
