@@ -10,6 +10,14 @@ import java.util.Scanner;
 
 public class Main {
 
+    /*
+    TO-DO:
+    - Code anpassen (schöner, Methoden ordentlich sortieren, etc.
+    - Fehlerbehebungen: Exception Handling
+    - Gesamte "UI" schöner machen, eine Überschrift etc.
+    - In der Aufgabenstellung steht was von einer Tabellenausgabe drin, das anpassen
+     */
+
     // JDBC URL, username and password
     public final static String SERVER = "ep-spring-sunset-a28e3rg5.eu-central-1.aws.neon.tech/neondb?";
     public final static String USER_AND_DATABASE = "neondb_owner";
@@ -90,6 +98,7 @@ public class Main {
         System.out.println("Person hinzugefügt!");
     }
 
+    //gibt alle Personen aus
     private static void printAllPersons(Connection connection) throws SQLException {
         String query = "SELECT * FROM person";
 
@@ -112,6 +121,7 @@ public class Main {
         }
     }
 
+    //für das Menü, kann man auch oben einfach so hinzufügen
     private static void printMainMenu() {
         System.out.println("\nWählen Sie eine Aktion:");
         System.out.println("L: Alle Personen anzeigen");
@@ -123,6 +133,7 @@ public class Main {
         System.out.println("X: Beenden");
     }
 
+    //Int über den Scanner, zum arbeiten
     private static int getIntegerInput(Scanner scanner, String prompt) {
         int input;
         while (!scanner.hasNextInt()) {
@@ -134,12 +145,15 @@ public class Main {
         return input;
     }
 
+    //String über den Scanner, zum arbeiten
     private static String getStringInput(Scanner scanner, String prompt) {
         System.out.print(prompt + ": ");
         return scanner.nextLine();
     }
 
     private static void editPerson(Connection connection, Scanner scanner) throws SQLException {
+
+        System.out.print("Geben Sie die ID der zu bearbeitenden Person ein: ");
         int id = getIntegerInput(scanner, "ID der zu bearbeitenden Person");
 
         String query = "SELECT * FROM person WHERE id = ?";
