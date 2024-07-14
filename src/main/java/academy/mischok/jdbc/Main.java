@@ -10,6 +10,8 @@ import java.util.Scanner;
 
 public class Main {
 
+    //Version 1.01
+
     /*
     TO-DO:
     - mit Spring boot und thymeleaf
