@@ -6,7 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class Main {
 
@@ -81,17 +84,61 @@ public class Main {
         String firstName = getStringInput(scanner, "Vorname");
         String lastName = getStringInput(scanner, "Nachname");
         String email = getStringInput(scanner, "E-Mail");
+        while (!validateEmail(email)) {
+            System.out.println("Ungültige E-Mail-Adresse! Bitte geben Sie eine gültige E-Mail-Adresse im Format 'name@domain.tld' ein.");
+            email = scanner.nextLine();
+        }
+
         String country = getStringInput(scanner, "Geburtsland");
-        System.out.print("Geburtsdatum (JJJJ-MM-TT): ");
-        String birthDateString = scanner.nextLine();
-        LocalDate birthday = LocalDate.parse(birthDateString);
+
+        boolean validInput = false;
+        LocalDate birthday = null;
+        while (!validInput) {
+            System.out.print("Geburtsdatum (JJJJ-MM-TT): ");
+            String birthDateString = scanner.nextLine();
+
+            try {
+                birthday = LocalDate.parse(birthDateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                validInput = true; // Format korrekt, Schleife beenden
+            } catch (DateTimeParseException e) {
+                System.out.println("Ungültiges Format! Bitte geben Sie das Geburtsdatum im Format JJJJ-MM-TT ein.");
+            }
+        }
 
         //würde auch mit int gehen, aber BigDecimal ist hier besser weil man damit wie bei Strings auf die zugreifen kann (siehe unten)
-        BigDecimal salary = new BigDecimal(getStringInput(scanner, "Gehalt"));
-        BigDecimal bonus = new BigDecimal(getStringInput(scanner, "Bonus(-Gehalt)"));
+        boolean validInputDecimal = false;
+        BigDecimal salary = null;
+        while (!validInputDecimal) {
+            String salaryString = getStringInput(scanner, "Gehalt"); // Ihre getStringInput-Methode
+
+            try {
+                salary = new BigDecimal(salaryString);
+                validInputDecimal = true; // Format korrekt, Schleife beenden
+            } catch (NumberFormatException e) {
+                System.out.println("Ungültige Eingabe! Bitte geben Sie eine Dezimalzahl für das Gehalt ein.");
+            }
+        }
+
+        boolean validInputBonus = false;
+        BigDecimal bonus = null;
+        while (!validInputBonus) {
+            String bonusString = getStringInput(scanner, "Bonus"); // Ihre getStringInput-Methode
+
+            try {
+                bonus = new BigDecimal(bonusString);
+                validInputBonus = true; // Format korrekt, Schleife beenden
+            } catch (NumberFormatException e) {
+                System.out.println("Ungültige Eingabe! Bitte geben Sie eine Dezimalzahl für den Bonus ein.");
+            }
+        }
 
         addPerson(connection, firstName, lastName, email, country, birthday, salary, bonus);
         System.out.println("Person erfolgreich hinzugefügt!");
+    }
+
+    public static boolean validateEmail(String email) {
+        String regex = "^[\\w\\.-]+@([\\w\\.-]+\\.)+[\\w\\.-]{2,3}$";
+        return Pattern.matches(regex, email);
     }
 
     private static void addPerson(Connection connection, String firstName, String lastName, String email, String country, LocalDate birthday, BigDecimal salary, BigDecimal bonus) throws SQLException {
@@ -110,6 +157,26 @@ public class Main {
         System.out.println("Person hinzugefügt!");
     }
 
+    private static void printTable(ResultSet resultSet) throws SQLException {
+
+        System.out.format("+------+-----------------+-----------------+--------------------------------+---------------------------+------------+------------+----------+%n");
+        System.out.format("|  ID  |    Vorname      |    Nachname     |             E-Mail             |           Land            | Geburtstag |   Gehalt   |   Bonus  |%n");
+        System.out.format("+------+-----------------+-----------------+--------------------------------+---------------------------+------------+------------+----------+%n");
+        String leftAlignment = "| %4d | %-15s | %-15s | %-30s | %-25s | %-10s | %-10s | %-8s |%n";
+        while (resultSet.next()) {
+            System.out.format(leftAlignment,
+                    resultSet.getInt(1),
+                    resultSet.getString(2),
+                    resultSet.getString(3),
+                    resultSet.getString(4),
+                    resultSet.getString(5),
+                    resultSet.getDate(6).toLocalDate(),
+                    resultSet.getBigDecimal(7),
+                    resultSet.getBigDecimal(8));
+            System.out.format("+------+-----------------+-----------------+--------------------------------+---------------------------+------------+------------+----------+%n");
+        }
+    }
+
     //gibt alle Personen aus
     private static void printAllPersons(Connection connection) throws SQLException {
         String query = "SELECT * FROM person";
@@ -118,19 +185,8 @@ public class Main {
         ResultSet resultSet = statement.executeQuery();
 
         System.out.println("Alle Einträge der 'person' Tabelle:");
-        while (resultSet.next()) {
-            int id = resultSet.getInt(1);
-            String firstName = resultSet.getString(2);
-            String lastName = resultSet.getString(3);
-            String email = resultSet.getString(4);
-            String country = resultSet.getString(5);
-            LocalDate birthday = resultSet.getDate(6).toLocalDate();
-            BigDecimal salary = resultSet.getBigDecimal(7);
-            BigDecimal bonus = resultSet.getBigDecimal(8);
 
-            System.out.printf("ID: %d, Name: %s %s, Email: %s, Land: %s, Geburtstag: %s, Gehalt: %s, Bonus: %s%n",
-                    id, firstName, lastName, email, country, birthday, salary, bonus);
-        }
+        printTable(resultSet);
     }
 
     //für das Menü, kann man auch oben einfach so hinzufügen
@@ -258,6 +314,8 @@ public class Main {
 
     //löscht die Person mit der angegebenen ID - Problem: Die ID wird danach nicht mehr vergeben
     private static void deletePerson(Connection connection, Scanner scanner) throws SQLException {
+
+        System.out.print("Geben Sie die ID der zu löschenden Person ein: ");
         int id = getIntegerInput(scanner, "ID der zu löschenden Person");
 
         String query = "DELETE FROM person WHERE id = ?";
@@ -307,20 +365,11 @@ public class Main {
         ResultSet resultSet = statement.executeQuery();
 
         System.out.println("Gefilterte Einträge der 'person' Tabelle:");
-        while (resultSet.next()) {
-            int id = resultSet.getInt(1);
-            String firstName = resultSet.getString(2);
-            String lastName = resultSet.getString(3);
-            String email = resultSet.getString(4);
-            String country = resultSet.getString(5);
-            LocalDate birthday = resultSet.getDate(6).toLocalDate();
-            BigDecimal salary = resultSet.getBigDecimal(7);
-            BigDecimal bonus = resultSet.getBigDecimal(8);
 
-            System.out.printf("ID: %d, Name: %s %s, Email: %s, Land: %s, Geburtstag: %s, Gehalt: %s, Bonus: %s%n",
-                    id, firstName, lastName, email, country, birthday, salary, bonus);
-        }
+        printTable(resultSet);
+
     }
+
 
     //funktioniert ähnlich wie beim Filtern, auch nicht wirklich schön aber funktioniert
     private static void sortPersons(Connection connection, Scanner scanner) throws SQLException {
@@ -345,18 +394,7 @@ public class Main {
         ResultSet resultSet = statement.executeQuery();
 
         System.out.println("Sortierte Einträge der 'person' Tabelle:");
-        while (resultSet.next()) {
-            int id = resultSet.getInt(1);
-            String firstName = resultSet.getString(2);
-            String lastName = resultSet.getString(3);
-            String email = resultSet.getString(4);
-            String country = resultSet.getString(5);
-            LocalDate birthday = resultSet.getDate(6).toLocalDate();
-            BigDecimal salary = resultSet.getBigDecimal(7);
-            BigDecimal bonus = resultSet.getBigDecimal(8);
 
-            System.out.printf("ID: %d, Name: %s %s, Email: %s, Land: %s, Geburtstag: %s, Gehalt: %s, Bonus: %s%n",
-                    id, firstName, lastName, email, country, birthday, salary, bonus);
-        }
+        printTable(resultSet);
     }
 }
