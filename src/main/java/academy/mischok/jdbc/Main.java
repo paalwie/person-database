@@ -12,17 +12,25 @@ public class Main {
 
     /*
     TO-DO:
+    - mit Spring boot und thymeleaf
     - Code anpassen (schöner, Methoden ordentlich sortieren, etc.
     - Fehlerbehebungen: Exception Handling
     - Gesamte "UI" schöner machen, eine Überschrift etc.
     - In der Aufgabenstellung steht was von einer Tabellenausgabe drin, das anpassen
     - Wenn man einen Eintrag löscht, wird diese ID nicht mehr vergeben, sprich da sind Lücken drin
+    - für Zahlen (salary und bonus) eine Abfrage hinzufügen: select * from person where (bsp) salary > x (kleiner, größer und gleich)
      */
 
-    // JDBC URL, username and password
-    public final static String SERVER = "ep-spring-sunset-a28e3rg5.eu-central-1.aws.neon.tech/neondb?";
+    // JDBC URL, username and password (old) Jakubs DB
+    //public final static String SERVER = "ep-spring-sunset-a28e3rg5.eu-central-1.aws.neon.tech/neondb?";
+    //public final static String USER_AND_DATABASE = "neondb_owner";
+    //public final static String PASSWORD = "z0I7jRhUZlmT";
+
+    //meine DB
+    public final static String SERVER = "ep-gentle-dew-a2m722pi.eu-central-1.aws.neon.tech/neondb?";
     public final static String USER_AND_DATABASE = "neondb_owner";
-    public final static String PASSWORD = "z0I7jRhUZlmT";
+    public final static String PASSWORD = "6QyuJaIPBs7f";
+
 
     public static void main(String[] args) {
 
@@ -95,6 +103,7 @@ public class Main {
         statement.setObject(5, birthday);
         statement.setBigDecimal(6, salary);
         statement.setBigDecimal(7, bonus);
+
         statement.executeUpdate();
         System.out.println("Person hinzugefügt!");
     }
@@ -277,6 +286,7 @@ public class Main {
             return;
         }
 
+        //für Zahlen (salary und bonus) eine Abfrage hinzufügen: select * from person where (bsp) salary > x (kleiner, größer und gleich)
         String field = filterParts[0].trim();
         String value = filterParts[1].trim();
         boolean isStringField = field.equals("first_name") || field.equals("last_name") || field.equals("email") || field.equals("country");
