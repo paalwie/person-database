@@ -13,17 +13,11 @@ import java.util.regex.Pattern;
 
 public class Main {
 
-    //Version 1.04
+    //Version 1.05
 
     /*
     TO-DO:
-    - mit Spring boot und thymeleaf
-    - Code anpassen (schöner, Methoden ordentlich sortieren, etc.
-    - Fehlerbehebungen: Exception Handling
-    - Gesamte "UI" schöner machen, eine Überschrift etc.
-    - In der Aufgabenstellung steht was von einer Tabellenausgabe drin, das anpassen
-    - Wenn man einen Eintrag löscht, wird diese ID nicht mehr vergeben, sprich da sind Lücken drin
-    - für Zahlen (salary und bonus) eine Abfrage hinzufügen: select * from person where (bsp) salary > x (kleiner, größer und gleich)
+    - passt
      */
 
     // JDBC URL, username and password (old) Jakubs DB
