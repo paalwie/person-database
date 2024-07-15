@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public class Main {
 
-    //Version 1.01
+    //Version 1.03
 
     /*
     TO-DO:
@@ -36,6 +36,10 @@ public class Main {
     public final static String USER_AND_DATABASE = "neondb_owner";
     public final static String PASSWORD = "6QyuJaIPBs7f";
 
+    // Für die rote Farbausgabe
+    static final String ANSI_RED = "\u001B[31m";
+    static final String ANSI_RESET = "\u001B[0m";
+    static final String ANSI_GREEN = "\u001B[32m";
 
     public static void main(String[] args) {
 
@@ -55,9 +59,11 @@ public class Main {
                         addPerson(connection, scanner);
                         break;
                     case "E":
+                        printAllPersons(connection);
                         editPerson(connection, scanner);
                         break;
                     case "D":
+                        printAllPersons(connection);
                         deletePerson(connection, scanner);
                         break;
                     case "F":
@@ -85,11 +91,16 @@ public class Main {
         String lastName = getStringInput(scanner, "Nachname");
         String email = getStringInput(scanner, "E-Mail");
         while (!validateEmail(email)) {
-            System.out.println("Ungültige E-Mail-Adresse! Bitte geben Sie eine gültige E-Mail-Adresse im Format 'name@domain.tld' ein.");
+            System.out.println(ANSI_RED + "Ungültige E-Mail-Adresse! Bitte geben Sie eine gültige E-Mail-Adresse im Format 'name@domain.tld' ein." + ANSI_RESET);
             email = scanner.nextLine();
         }
 
         String country = getStringInput(scanner, "Geburtsland");
+
+        while (!validateCountry(country)) {
+            System.out.println(ANSI_RED + "Bitte ein Land ohne Zahlen eintragen" + ANSI_RESET);
+            country = scanner.nextLine();
+        }
 
         boolean validInput = false;
         LocalDate birthday = null;
@@ -101,7 +112,7 @@ public class Main {
                 birthday = LocalDate.parse(birthDateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 validInput = true; // Format korrekt, Schleife beenden
             } catch (DateTimeParseException e) {
-                System.out.println("Ungültiges Format! Bitte geben Sie das Geburtsdatum im Format JJJJ-MM-TT ein.");
+                System.out.println(ANSI_RED + "Ungültiges Format! Bitte geben Sie das Geburtsdatum im Format JJJJ-MM-TT ein." + ANSI_RESET);
             }
         }
 
@@ -115,7 +126,7 @@ public class Main {
                 salary = new BigDecimal(salaryString);
                 validInputDecimal = true; // Format korrekt, Schleife beenden
             } catch (NumberFormatException e) {
-                System.out.println("Ungültige Eingabe! Bitte geben Sie eine Dezimalzahl für das Gehalt ein.");
+                System.out.println(ANSI_RED + "Ungültige Eingabe! Bitte geben Sie eine Dezimalzahl für das Gehalt ein." + ANSI_RESET);
             }
         }
 
@@ -128,17 +139,22 @@ public class Main {
                 bonus = new BigDecimal(bonusString);
                 validInputBonus = true; // Format korrekt, Schleife beenden
             } catch (NumberFormatException e) {
-                System.out.println("Ungültige Eingabe! Bitte geben Sie eine Dezimalzahl für den Bonus ein.");
+                System.out.println(ANSI_RED + "Ungültige Eingabe! Bitte geben Sie eine Dezimalzahl für den Bonus ein." + ANSI_RESET);
             }
         }
 
         addPerson(connection, firstName, lastName, email, country, birthday, salary, bonus);
-        System.out.println("Person erfolgreich hinzugefügt!");
+        System.out.println(ANSI_GREEN + "Person erfolgreich hinzugefügt!" + ANSI_RESET);
     }
 
     public static boolean validateEmail(String email) {
         String regex = "^[\\w\\.-]+@([\\w\\.-]+\\.)+[\\w\\.-]{2,3}$";
         return Pattern.matches(regex, email);
+    }
+
+    public static boolean validateCountry (String country) {
+        String regex ="^[^0-9]*$";
+        return Pattern.matches(regex, country);
     }
 
     private static void addPerson(Connection connection, String firstName, String lastName, String email, String country, LocalDate birthday, BigDecimal salary, BigDecimal bonus) throws SQLException {
@@ -154,7 +170,7 @@ public class Main {
         statement.setBigDecimal(7, bonus);
 
         statement.executeUpdate();
-        System.out.println("Person hinzugefügt!");
+        System.out.println( ANSI_GREEN + "Person hinzugefügt!" + ANSI_RESET);
     }
 
     private static void printTable(ResultSet resultSet) throws SQLException {
@@ -231,7 +247,7 @@ public class Main {
         ResultSet resultSet = statement.executeQuery();
 
         if (!resultSet.next()) {
-            System.out.println("Keine Person mit der ID " + id + " gefunden.");
+            System.out.println(ANSI_RED + "Keine Person mit der ID " + id + " gefunden."+ ANSI_RESET);
             return;
         }
 
@@ -309,27 +325,36 @@ public class Main {
         updateStatement.setInt(8, id);
         updateStatement.executeUpdate();
 
-        System.out.println("Person erfolgreich bearbeitet!");
+        System.out.println(ANSI_GREEN + "Person erfolgreich bearbeitet!" + ANSI_RESET);
     }
 
     //löscht die Person mit der angegebenen ID - Problem: Die ID wird danach nicht mehr vergeben
     private static void deletePerson(Connection connection, Scanner scanner) throws SQLException {
 
+        String bestätigung = " ";
         System.out.print("Geben Sie die ID der zu löschenden Person ein: ");
         int id = getIntegerInput(scanner, "ID der zu löschenden Person");
 
-        String query = "DELETE FROM person WHERE id = ?";
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setInt(1, id);
+        System.out.println("Sind Sie sich sicher das sie die ID " + id + " löschen wollen ? ");
 
-        int gewählteZeile = statement.executeUpdate();
-        if (gewählteZeile == 0) {
-            System.out.println("Keine Person mit der ID " + id + " gefunden.");
+        if (scanner.nextLine().equalsIgnoreCase("y")) {
+
+            String query = "DELETE FROM person WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, id);
+
+            int gewählteZeile = statement.executeUpdate();
+            if (gewählteZeile == 0) {
+                System.out.println("Keine Person mit der ID " + id + " gefunden.");
+            } else {
+                System.out.println(ANSI_GREEN + "Person erfolgreich gelöscht." + ANSI_RESET);
+            }
         } else {
-            System.out.println("Person erfolgreich gelöscht.");
-        }
-    }
+            System.out.println(ANSI_RED + "Löschvorgang wurde wie gewünscht abgebrochen" + ANSI_RESET);
 
+        }
+
+    }
 
     /*
      * filtert die Daten aus der Datenbank per übergebene ID, fragt nach welcher Wert geändert werden soll, überschreibt dann diesen, und speichert die geänderte Daten
