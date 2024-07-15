@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public class Main {
 
-    //Version 1.03
+    //Version 1.04
 
     /*
     TO-DO:
@@ -152,8 +152,8 @@ public class Main {
         return Pattern.matches(regex, email);
     }
 
-    public static boolean validateCountry (String country) {
-        String regex ="^[^0-9]*$";
+    public static boolean validateCountry(String country) {
+        String regex = "^[^0-9]*$";
         return Pattern.matches(regex, country);
     }
 
@@ -170,7 +170,7 @@ public class Main {
         statement.setBigDecimal(7, bonus);
 
         statement.executeUpdate();
-        System.out.println( ANSI_GREEN + "Person hinzugefügt!" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "Person hinzugefügt!" + ANSI_RESET);
     }
 
     private static void printTable(ResultSet resultSet) throws SQLException {
@@ -207,14 +207,23 @@ public class Main {
 
     //für das Menü, kann man auch oben einfach so hinzufügen
     private static void printMainMenu() {
-        System.out.println("\nWählen Sie eine Aktion:");
-        System.out.println("L: Alle Personen anzeigen");
-        System.out.println("A: Person hinzufügen");
-        System.out.println("E: Person bearbeiten");
-        System.out.println("D: Person löschen");
-        System.out.println("F: Personen filtern");
-        System.out.println("S: Personen sortieren");
-        System.out.println("X: Beenden");
+        System.out.println("+-------------------------------+");
+        System.out.println("|    Wählen Sie eine Aktion:    |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  L:  | Alle Personen anzeigen |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  A:  | Person hinzufügen      |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  E:  | Person bearbeiten      |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  D:  | Person löschen         |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  F:  | Personen filtern       |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  S:  | Personen sortieren     |");
+        System.out.println("+------+------------------------+");
+        System.out.println("|  X:  | Beenden                |");
+        System.out.println("+------+------------------------+");
     }
 
     //Int über den Scanner, zum arbeiten
@@ -247,7 +256,7 @@ public class Main {
         ResultSet resultSet = statement.executeQuery();
 
         if (!resultSet.next()) {
-            System.out.println(ANSI_RED + "Keine Person mit der ID " + id + " gefunden."+ ANSI_RESET);
+            System.out.println(ANSI_RED + "Keine Person mit der ID " + id + " gefunden." + ANSI_RESET);
             return;
         }
 
@@ -361,28 +370,55 @@ public class Main {
      */
     private static void filterPersons(Connection connection, Scanner scanner) throws SQLException {
 
+        String field;
+        String value = "";
+        String query = "";
+
         //gibt hier über die Konsole den Filterkriterien ein, wie in SQL dargestellt (eventuell ändern, ist nicht wirklich schön)
         //nach 2 Feldern, getrennt durch das = : links das Attribut, rechts den Wert
-        System.out.print("Geben Sie die Filterkriterien ein (z.B. last_name=Smith oder country=Germany): ");
-        String filterInput = scanner.nextLine();
-        String[] filterParts = filterInput.split("=");
-        if (filterParts.length != 2) {
-            System.out.println("Ungültiges Filterformat. Bitte verwenden Sie das Format feld=wert.");
-            return;
-        }
+        System.out.println("Was möchten Sie machen?");
+        System.out.println("Geben Sie ein: 1 -> Filtern nach Vornamen, Nachname, Land, Email -> sucht ob diese Eingabe in der gewünschten Spalte vorkommt");
+        System.out.println("Geben Sie ein: 2 -> Filtert Gehalt und Bonus danach, ob dieser Wert exakt vorkommt");
 
-        //für Zahlen (salary und bonus) eine Abfrage hinzufügen: select * from person where (bsp) salary > x (kleiner, größer und gleich)
-        String field = filterParts[0].trim();
-        String value = filterParts[1].trim();
-        boolean isStringField = field.equals("first_name") || field.equals("last_name") || field.equals("email") || field.equals("country");
+        switch (getIntegerInput(scanner, "Ihre Wahl")) {
+            case 1:
+                System.out.print("Geben Sie die Filterkriterien ein (z.B. last_name=Smith oder country=Germany): ");
+                String filterInput = scanner.nextLine();
+                String[] filterParts = filterInput.split("=");
+                if (filterParts.length != 2) {
+                    System.out.println("Ungültiges Filterformat. Bitte verwenden Sie das Format feld=wert.");
+                    return;
+                }
 
-        //schreibt einen SQL Befehl für die Filterung, der den Wert überall sucht, egal ob am Anfang, Mitte oder Schluss (heißt das gesuchte Wort muss irgendwo vorkommen)
-        String query = "SELECT * FROM person WHERE ";
-        if (isStringField) {
-            query += field + " ILIKE ?";
-            value = "%" + value + "%";
-        } else {
-            query += field + " = ?";
+                //für Zahlen (salary und bonus) eine Abfrage hinzufügen: select * from person where (bsp) salary > x (kleiner, größer und gleich)
+                field = filterParts[0].trim();
+                value = filterParts[1].trim();
+                boolean isStringField = field.equals("first_name") || field.equals("last_name") || field.equals("email") || field.equals("country");
+
+                //schreibt einen SQL Befehl für die Filterung, der den Wert überall sucht, egal ob am Anfang, Mitte oder Schluss (heißt das gesuchte Wort muss irgendwo vorkommen)
+                query = "SELECT * FROM person WHERE ";
+                if (isStringField) {
+                    query += field + " ILIKE ?";
+                    value = "%" + value + "%";
+                } else {
+                    query += field + " = ?";
+                }
+                break;
+            case 2:
+                System.out.print("Geben Sie die Filterkriterien ein (z.B. salary=1000.00 oder bonus=500.00): ");
+                String filterInput2 = scanner.nextLine();
+                String[] filterParts2 = filterInput2.split("=");
+                if (filterParts2.length != 2) {
+                    System.out.println("Ungültiges Filterformat. Bitte verwenden Sie das Format feld=wert.");
+                    return;
+                }
+                field = filterParts2[0].trim();
+                value = filterParts2[1].trim();
+                query = "SELECT * FROM person WHERE " + field + " = CAST(? AS INTEGER)";
+                System.out.println(query);
+                break;
+            default:
+                System.out.println("Ungültige Eingabe. Bitte erneut versuchen.");
         }
 
         PreparedStatement statement = connection.prepareStatement(query);
@@ -393,27 +429,75 @@ public class Main {
 
         printTable(resultSet);
 
+        System.out.println("Möchten Sie das Ergebnis noch sortieren? (y/n)");
+        if (scanner.nextLine().equalsIgnoreCase("y")) {
+
+            sortierenNachFiltern(connection, scanner, statement.toString());
+        }
+
     }
 
 
     //funktioniert ähnlich wie beim Filtern, auch nicht wirklich schön aber funktioniert
     private static void sortPersons(Connection connection, Scanner scanner) throws SQLException {
-        System.out.print("Geben Sie die Sortierkriterien ein (z.B. last_name ASC oder salary DESC): ");
-        String sortInput = scanner.nextLine();
-        String[] sortParts = sortInput.split(" ");
-        if (sortParts.length != 2) {
-            System.out.println("Ungültiges Sortierformat. Bitte verwenden Sie das Format feld richtung.");
-            return;
+
+        String spalte;
+        String richtung;
+
+        System.out.println("Geben Sie die Nummer für die Sortierspalte ein: ");
+        System.out.println("1 -> Vorname");
+        System.out.println("2 -> Nachname");
+        System.out.println("3 -> E-Mail");
+        System.out.println("4 -> Land");
+        System.out.println("5 -> Geburtstag");
+        System.out.println("6 -> Gehalt");
+        System.out.println("7 -> Bonus");
+
+        switch (scanner.nextLine()) {
+            case "1":
+                spalte = "LOWER(first_name)";
+                break;
+            case "2":
+                spalte = "LOWER(last_name)";
+                break;
+            case "3":
+                spalte = "LOWER(email)";
+                break;
+            case "4":
+                spalte = "LOWER(country)";
+                break;
+            case "5":
+                spalte = "birthday";
+                break;
+            case "6":
+                spalte = "salary";
+                break;
+            case "7":
+                spalte = "bonus";
+                break;
+            default:
+                System.out.println("Ungültiges Sortierformat. Bitte verwenden Sie das Format feld richtung.");
+                return;
         }
 
-        String attribut = sortParts[0].trim();
-        String sortierung = sortParts[1].trim().toUpperCase();
-        if (!sortierung.equals("ASC") && !sortierung.equals("DESC")) {
-            System.out.println("Ungültige Sortierrichtung. Bitte verwenden Sie ASC oder DESC.");
-            return;
+        System.out.println("Geben Sie die Nummer für die Sortierrichtung ein: ");
+        System.out.println("1 -> Aufsteigend");
+        System.out.println("2 -> Absteigend");
+
+
+        switch (scanner.nextLine()) {
+            case "1":
+                richtung = "ASC";
+                break;
+            case "2":
+                richtung = "DESC";
+                break;
+            default:
+                System.out.println("Ungültiges Sortierformat. Bitte verwenden Sie das Format feld richtung.");
+                return;
         }
 
-        String query = "SELECT * FROM person ORDER BY " + attribut + " " + sortierung;
+        String query = "SELECT * FROM person ORDER BY " + spalte + " " + richtung;
 
         PreparedStatement statement = connection.prepareStatement(query);
         ResultSet resultSet = statement.executeQuery();
@@ -421,5 +505,77 @@ public class Main {
         System.out.println("Sortierte Einträge der 'person' Tabelle:");
 
         printTable(resultSet);
+    }
+
+    private static void sortierenNachFiltern(Connection connection, Scanner scanner, String query) throws SQLException {
+
+        String spalte;
+        String richtung;
+
+        System.out.println("Geben Sie die Nummer für die Sortierspalte ein: ");
+        System.out.println("1 -> Vorname");
+        System.out.println("2 -> Nachname");
+        System.out.println("3 -> E-Mail");
+        System.out.println("4 -> Land");
+        System.out.println("5 -> Geburtstag");
+        System.out.println("6 -> Gehalt");
+        System.out.println("7 -> Bonus");
+
+        switch (scanner.nextLine()) {
+            case "1":
+                spalte = "LOWER(first_name)";
+                break;
+            case "2":
+                spalte = "LOWER(last_name)";
+                break;
+            case "3":
+                spalte = "LOWER(email)";
+                break;
+            case "4":
+                spalte = "LOWER(country)";
+                break;
+            case "5":
+                spalte = "birthday";
+                break;
+            case "6":
+                spalte = "salary";
+                break;
+            case "7":
+                spalte = "bonus";
+                break;
+            default:
+                System.out.println("Ungültiges Sortierformat. Bitte verwenden Sie das Format feld richtung.");
+                return;
+        }
+
+        System.out.println("Geben Sie die Nummer für die Sortierrichtung ein: ");
+        System.out.println("1 -> Aufsteigend");
+        System.out.println("2 -> Absteigend");
+
+
+        switch (scanner.nextLine()) {
+            case "1":
+                richtung = "ASC";
+                break;
+            case "2":
+                richtung = "DESC";
+                break;
+            default:
+                System.out.println("Ungültiges Sortierformat. Bitte verwenden Sie das Format feld richtung.");
+                return;
+        }
+
+        query += " ORDER BY " + spalte + " " + richtung;
+
+        System.out.println(query);
+
+        PreparedStatement statement = connection.prepareStatement(query);
+        ResultSet resultSet = statement.executeQuery();
+
+        System.out.println("Sortierte Einträge der 'person' Tabelle:");
+
+        printTable(resultSet);
+
+
     }
 }
