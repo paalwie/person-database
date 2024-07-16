@@ -1,10 +1,7 @@
 package academy.mischok.jdbc;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -367,14 +364,18 @@ public class Main {
         String field;
         String value = "";
         String query = "";
+        int switchInput;
+        PreparedStatement statement;
+        LocalDate birthdate = null;
 
         //gibt hier über die Konsole den Filterkriterien ein, wie in SQL dargestellt (eventuell ändern, ist nicht wirklich schön)
         //nach 2 Feldern, getrennt durch das = : links das Attribut, rechts den Wert
         System.out.println("Was möchten Sie machen?");
         System.out.println("Geben Sie ein: 1 -> Filtern nach Vornamen, Nachname, Land, Email -> sucht ob diese Eingabe in der gewünschten Spalte vorkommt");
         System.out.println("Geben Sie ein: 2 -> Filtert Gehalt und Bonus danach, ob dieser Wert exakt vorkommt");
+        System.out.println("Geben Sie ein: 3 -> Schaut ob das passende Geburtstag in der Datenbank vorkommt");
 
-        switch (getIntegerInput(scanner, "Ihre Wahl")) {
+        switch (switchInput = getIntegerInput(scanner, "Ihre Wahl")) {
             case 1:
                 System.out.print("Geben Sie die Filterkriterien ein (z.B. last_name=Smith oder country=Germany): ");
                 String filterInput = scanner.nextLine();
@@ -399,7 +400,7 @@ public class Main {
                 }
                 break;
             case 2:
-                System.out.print("Geben Sie die Filterkriterien ein (z.B. salary=1000.00 oder bonus=500.00): ");
+                System.out.print("Geben Sie die Filterkriterien ein (z.B. birthday=2000-01-01 oder salary=1000.00 oder bonus=500.00): ");
                 String filterInput2 = scanner.nextLine();
                 String[] filterParts2 = filterInput2.split("=");
                 if (filterParts2.length != 2) {
@@ -411,12 +412,26 @@ public class Main {
                 query = "SELECT * FROM person WHERE " + field + " = CAST(? AS INTEGER)";
                 System.out.println(query);
                 break;
+            case 3:
+                System.out.println("Geben Sie das gesuchte Geburtstdatum ein (z.B. 2000-01-01): ");
+                String oldValue = scanner.nextLine();
+                birthdate = LocalDate.parse(oldValue, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                query = "SELECT * FROM person WHERE birthday = ?";
+                break;
             default:
                 System.out.println("Ungültige Eingabe. Bitte erneut versuchen.");
         }
 
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, value);
+        if (switchInput == 3){
+            statement = connection.prepareStatement(query);
+            statement.setDate(1, Date.valueOf(birthdate));
+        }
+        else {
+
+            statement = connection.prepareStatement(query);
+            statement.setString(1, value);
+        }
+        
         ResultSet resultSet = statement.executeQuery();
 
         System.out.println("Gefilterte Einträge der 'person' Tabelle:");
